@@ -53,7 +53,7 @@ async def on_ready():
     print(f'{bot.user} has connected to Discord!')
     
 def run_discord_bot():
-    bot.run(DISCORD_API_TOKEN) 
+    bot.run(DISCORD_API_KEY) 
 
 def run_flask():
     app.run(port=8000)
@@ -61,5 +61,4 @@ def run_flask():
 if __name__ == '__main__':
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
-
     run_discord_bot()
