@@ -15,7 +15,7 @@ CORS(app, origins='http://localhost:5173')
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents)
-target_channel = 1215460261784191020
+target_channel = 1306364882001596497
 subreddit = reddit.subreddit('pitbulls')
 
 def convert_image(image):
@@ -23,30 +23,33 @@ def convert_image(image):
     formatted_image = io.BytesIO(image_data)
     return formatted_image
 
-@app.route('/postdis', methods=['POST'])
+@app.route('/post', methods=['POST'])
 def post():
-    text = request.form.get('text')
-    image = request.files.get('image')
-    discord_post = request.form.get('discord') == 'true'
-    reddit_post = request.form.get('reddit') == 'true'
-    reddit_format = request.form.get('redditFormat', None)
-    reddit_title = request.form.get('redditTitle', None)
+    try:
+        text = request.form.get('text')
+        image = request.files.get('image')
+        discord_post = request.form.get('discord') == 'true'
+        reddit_post = request.form.get('reddit') == 'true'
+        reddit_format = request.form.get('redditFormat', None)
+        reddit_title = request.form.get('redditTitle', None)
 
+        if image:
+            image_data = image.read()
+            discord_image = discord.File(io.BytesIO(image_data), filename=image.filename)
+            reddit_image = io.BytesIO(image_data)
+        else:
+            discord_image = None
+            reddit_image = None 
 
-    if image:
-        image_data = image.read()
-        discord_image = discord.File(io.BytesIO(image_data), filename=image.filename)
-        reddit_image = io.BytesIO(image_data)
-    else:
-        discord_image = None
-        reddit_image = None 
+        if discord_post:    
+            asyncio.run_coroutine_threadsafe(discord_send_message(text, discord_image), bot.loop)
+        if reddit_post:
+            reddit_send_message(reddit_title, reddit_format, text, reddit_image)
 
-    if discord_post:    
-        asyncio.run_coroutine_threadsafe(discord_send_message(text, discord_image), bot.loop)
-    if reddit_post:
-        reddit_send_message(reddit_title, reddit_format, text, reddit_image)
-
-    return jsonify({'status': 'Success', 'message': 'Data received'}), 200
+        return jsonify({'status': 'Success', 'message': 'Data received'}), 200
+    except Exception as e:
+        print(f'Error in /postdis endpoint: {e}')
+        return jsonify({'status': 'Failure', 'message': str(e)}), 500
 
 async def discord_send_message(text, discord_file):
     channel = bot.get_channel(target_channel)

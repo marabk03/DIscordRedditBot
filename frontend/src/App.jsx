@@ -24,27 +24,37 @@ function App() {
     }));
   };
 
+  const isRedditSelected = () => formData.reddit;
+  const isDiscordSelected = () => formData.discord;
+  const isTextRequired = () => formData.redditFormat === "text" || formData.discord;
+  const isImageRequired = () => formData.redditFormat === "image" || formData.discord;
+
+  const appendFormData = (data) => {
+    if (formData.text) data.append("text", formData.text);
+    if (formData.image) data.append("image", formData.image);
+    data.append("discord", formData.discord);
+    data.append("reddit", formData.reddit);
+
+    if (formData.reddit) {
+      data.append("redditTitle", formData.redditTitle);
+      data.append("redditFormat", formData.redditFormat);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.reddit && !formData.discord) {
+    if (!isRedditSelected() && !isDiscordSelected()) {
       alert("You must select at least one platform to post on.");
       return;
     }
 
     const data = new FormData();
-    if (formData.text) data.append("text", formData.text);
-    if (formData.image) data.append("image", formData.image);
-    data.append("discord", formData.discord);
-    data.append("reddit", formData.reddit);
-    if (formData.reddit) {
-      data.append("redditTitle", formData.redditTitle);
-      data.append("redditFormat", formData.redditFormat);
-    }
+    appendFormData(data);
 
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:8000/postdis", data);
+      const response = await axios.post("http://localhost:8000/post", data);
       if (response.data.status === "Success") {
         setFormData(initialState);
         e.target.reset();
@@ -111,7 +121,7 @@ function App() {
             </div>
           </fieldset>
 
-          {formData.reddit && (
+          {isRedditSelected() && (
             <div className="flex flex-col space-y-6 mt-4 ">
               <p className="text-2xl text-left">Reddit Post Title</p>
               <label htmlFor="reddit-title" className="sr-only">
@@ -166,7 +176,7 @@ function App() {
               </div>
             </div>
           )}
-          {(formData.redditFormat == "text" || formData.discord) && (
+          {isTextRequired() && (
             <div className="my-3 text-left">
               <label htmlFor="message" className="text-2xl my-3 text-left">
                 What would you like to send?
@@ -183,10 +193,10 @@ function App() {
               ></textarea>
             </div>
           )}
-          {(formData.redditFormat == "image" || formData.discord) && (
+          {isImageRequired() && (
             <div className="text-left mt-3">
               <label htmlFor="image-upload" className="text-2xl my-3 text-left">
-                Would you like to add an image?
+                Please Attach an Image
               </label>
               <input
                 type="file"
